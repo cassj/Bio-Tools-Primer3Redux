@@ -42,6 +42,8 @@ SKIP: {
         isa_ok($result, 'Bio::Tools::Primer3Redux::Result');
         is($result->num_primer_pairs,5);
         my $pair = $result->next_primer_pair;
+	use Data::Dumper;
+	warn Dumper $pair;
         isa_ok($pair, 'Bio::Tools::Primer3Redux::PrimerPair');
         isa_ok($pair, 'Bio::SeqFeature::Generic');
 
@@ -55,6 +57,11 @@ SKIP: {
         cmp_ok(length($rp->seq->seq), '>', 18);
     }
     
+    
+
+
+
+
     $primer3->set_parameters(
         'PRIMER_MAX_POLY_X'         => 3,   # no runs of more than 2 of same nuc
         'PRIMER_MIN_TM'             => 55,  # Tm window
@@ -74,6 +81,7 @@ SKIP: {
         my $pair = $result->next_primer_pair;
         ok(!defined($pair));
     }
+
 }
 
 done_testing();
