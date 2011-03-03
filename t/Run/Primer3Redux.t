@@ -23,7 +23,7 @@ ok $primer3 = Bio::Tools::Run::Primer3Redux->new();
 
 SKIP: {
     test_skip(-requires_executable => $primer3,
-              -tests => 6);
+              -tests => 8);
     like( $primer3->program_name, qr/primer3/, 'program_name');
 
     # note: these are v2 parameters
@@ -42,8 +42,6 @@ SKIP: {
         isa_ok($result, 'Bio::Tools::Primer3Redux::Result');
         is($result->num_primer_pairs,5);
         my $pair = $result->next_primer_pair;
-	use Data::Dumper;
-	warn Dumper $pair;
         isa_ok($pair, 'Bio::Tools::Primer3Redux::PrimerPair');
         isa_ok($pair, 'Bio::SeqFeature::Generic');
 
@@ -55,6 +53,12 @@ SKIP: {
         isa_ok($fp, 'Bio::SeqFeature::Generic');
         cmp_ok(length($fp->seq->seq), '>', 18);
         cmp_ok(length($rp->seq->seq), '>', 18);
+
+	my $s  = $result->get_seq;
+        isa_ok($s, 'Bio::Seq');
+	
+        my $ps = $result->get_processed_seq;
+	isa_ok($ps, 'Bio::Seq');
     }
     
     
