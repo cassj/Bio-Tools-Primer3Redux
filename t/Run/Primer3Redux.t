@@ -60,9 +60,6 @@ SKIP: {
         my $ps = $result->get_processed_seq;
 	isa_ok($ps, 'Bio::Seq');
     }
-    
-    
-
 
 
 

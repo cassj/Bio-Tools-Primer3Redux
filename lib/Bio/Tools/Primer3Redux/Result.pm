@@ -180,7 +180,7 @@ sub get_processed_seq {
     # Run out primer pair first, then others
     for my $it_type (qw(PAIR LEFT RIGHT INTERNAL)) {
         my $it = $self->_generate_iterator($it_type);
-        while (my $sf = $it->()) {}
+        while (my $sf = $it->()) {} #omg, how the fuck does this work?
     }
     return $self->get_seq();
 }
@@ -366,7 +366,7 @@ sub _generate_iterator {
         join(',', sort keys %VALID_ITERATORS)) unless
         (defined $it_type || !exists $VALID_ITERATORS{uc $it_type});
     $it_type = uc $it_type;
-    
+
     my $mth = $VALID_ITERATORS{$it_type};
 
     my $persistent_data = $self->{persistent_data}{$it_type};
@@ -374,19 +374,19 @@ sub _generate_iterator {
         map {$self->{feature_data}{$_}}           sort {$a <=> $b} keys %{$self->{feature_data}} :
         map {$self->{feature_data}{$_}{$it_type}} sort {$a <=> $b} keys %{$self->{feature_data}};
     my $ct = 0;
-    
+
     # for attaching the features
     my $seq = $self->get_seq;
-    
+
+    my $instance = $self;
     return ($it_type eq 'PAIR') ?
         sub {
-            my $instance = shift;
-            my $ft = shift @feat_data;
+	  my $ft = shift @feat_data;
             return unless $ft;
             # return cached features if previously generated and seq already attached
             return $ft->{PAIR} if (blessed $ft->{PAIR} && $ft->{PAIR}->isa('Bio::SeqFeature::Generic')
                 && !$self->{reattach_sf});
-            
+
             # carry over persistent data
             for my $fkey (keys %{$ft}) {
                 $ft->{$fkey}{rank} = $ct;
@@ -395,13 +395,13 @@ sub _generate_iterator {
                     $ft->{$fkey}{$pkey} = $persistent_data->{$pkey};
                 }
             }
+
             my $sf = $mth->($ft,$seq,$instance);
             # run caching here
             $ct++;
             $sf;
         } :
         sub {
-            my $instance = shift;            
             # these are tags
             my $ft = shift @feat_data;
             return unless $ft;
@@ -433,9 +433,10 @@ sub _generate_primer {
     my $strand = $type eq 'right' ? -1 : 1;
     my ($start, $len) = split(',', $loc);
     # coordinates for Primer3 may be zero-based, may need conversion to 1-based
-    if (!$instance->run_parameter('PRIMER_FIRST_BASE_INDEX')) {
-        $start++
+    if(!$instance->run_parameter('PRIMER_FIRST_BASE_INDEX')){
+        $start++;
     }
+
     my $end = ($strand == 1) ? $start + $len -1 : $start - $len + 1;
     ($start, $end) = ($end, $start) if $strand == -1;
     my $primary = $type eq 'internal' ? 'ss_oligo'       :
