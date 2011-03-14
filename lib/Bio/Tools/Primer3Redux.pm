@@ -53,12 +53,12 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
   bioperl-l@bioperl.org                  - General discussion
   http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
 
-=head2 Support 
- 
+=head2 Support
+
 Please direct usage questions or support issues to the mailing list:
-  
+
 L<bioperl-l@bioperl.org>
-  
+
 rather than to the module maintainer directly. Many experienced and 
 reponsive experts will be able look at the problem and quickly 
 address it. Please include a thorough description of the problem 
@@ -128,51 +128,50 @@ use base qw(Bio::Root::IO Bio::AnalysisParserI);
   Returns  : Bio::Tools::Primer3Redux::Result || undef
   Args     : none 
   Status   : stable
- 
+
 =cut
 
 {
 
-sub next_result {
+  sub next_result {
 	my $self = shift;
-    
-    $self->start_document;
-    
-    while (my $line = $self->_readline) {
-        last if index($line, '=') == 0;
+	
+	$self->start_document;
+	
+	while (my $line = $self->_readline) {
+      last if index($line, '=') == 0;
         chomp $line;
         my ($tag, $data) = split('=', $line, 2 );
         if ($tag =~ /^PRIMER_(LEFT|RIGHT|INTERNAL_OLIGO|INTERNAL|PAIR|PRODUCT)(?:(?:_(\d+))?_(.*))?/xmso) {
-            my ($type, $rank, $primer_tag) = ($1, $2, $3);
+	  my ($type, $rank, $primer_tag) = ($1, $2, $3);
             if (!defined $rank && defined $primer_tag && $primer_tag =~ /(?:(\w+)_)?(\d+)$/) {
                 ($primer_tag, $rank) = ($1, $2);
-            }
+	      }
             $rank ||= 0;
             $type = 'INTERNAL' if $type eq 'INTERNAL_OLIGO';
             # indicates location information
             $primer_tag ||= 'LOCATION';
             if ($primer_tag eq 'EXPLAIN' || $primer_tag eq 'NUM_RETURNED') {
-                $self->{persistent}->{$type}->{lc $primer_tag} = $data;
+	      $self->{persistent}->{$type}->{lc $primer_tag} = $data;
                 next;
-            }
+	      }
             # v1 -> v2 change
             if ($type eq 'PRODUCT') {
-                $type = 'PAIR';
+	      $type = 'PAIR';
                 $primer_tag = 'PRODUCT_SIZE';
-            }
+	      }
             $self->{features}->{$rank}->{$type}->{lc $primer_tag} = $data;
-        } elsif ($tag =~ /^(?:PRIMER_)?SEQUENCE(?:_(?:ID|TEMPLATE))?$/ )  {
-            $self->{sequence}->{$tag} = $data;
-        } else{ # anything else 
-            $self->{run_parameters}->{$tag} = $data;
-        } 
-    }
-    
-    my $doc = $self->end_document;
-    
-    return $doc;
-}
-
+	  } elsif ($tag =~ /^(?:PRIMER_)?SEQUENCE(?:_(?:ID|TEMPLATE))?$/ )  {
+	  $self->{sequence}->{$tag} = $data;
+	  } else{ # anything else 
+	  $self->{run_parameters}->{$tag} = $data;
+	  } 
+      }
+	
+	my $doc = $self->end_document;
+	return $doc;
+      }
+  
 }
 
 =head2 start_document

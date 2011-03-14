@@ -23,7 +23,7 @@ ok $primer3 = Bio::Tools::Run::Primer3Redux->new();
 
 SKIP: {
     test_skip(-requires_executable => $primer3,
-              -tests => 8);
+              -tests => 9);
     like( $primer3->program_name, qr/primer3/, 'program_name');
 
     # note: these are v2 parameters
@@ -34,31 +34,43 @@ SKIP: {
     
         'PRIMER_PRODUCT_SIZE_RANGE' => '100-250',      # size
         'PRIMER_EXPLAIN_FLAG'       => 1,              # if there are errors...
+
     );
     
     # initial run
     ok my $parser = $primer3->run($seq);
     while (my $result = $parser->next_result) {
-        isa_ok($result, 'Bio::Tools::Primer3Redux::Result');
-        is($result->num_primer_pairs,5);
-        my $pair = $result->next_primer_pair;
-        isa_ok($pair, 'Bio::Tools::Primer3Redux::PrimerPair');
-        isa_ok($pair, 'Bio::SeqFeature::Generic');
+      isa_ok($result, 'Bio::Tools::Primer3Redux::Result');
+      is($result->num_primer_pairs,5);
+      my $pair = $result->next_primer_pair;
+      isa_ok($pair, 'Bio::Tools::Primer3Redux::PrimerPair');
+      isa_ok($pair, 'Bio::SeqFeature::Generic');
+      
+      my ($fp, $rp) = ($pair->forward_primer, $pair->reverse_primer);
+      
+      # can't really do exact checks here, but we can certainly check
+      # various things about these...
+      isa_ok($fp, 'Bio::Tools::Primer3Redux::Primer');
+      isa_ok($fp, 'Bio::SeqFeature::Generic');
+      cmp_ok(length($fp->seq->seq), '>', 18);
+      cmp_ok(length($rp->seq->seq), '>', 18);
+      
+      my $s  = $result->get_seq;
+      isa_ok($s, 'Bio::Seq');
+      
+      my $ps = $result->get_processed_seq;
+      isa_ok($ps, 'Bio::Seq');
 
-        my ($fp, $rp) = ($pair->forward_primer, $pair->reverse_primer);
-        
-        # can't really do exact checks here, but we can certainly check
-        # various things about these...
-        isa_ok($fp, 'Bio::Tools::Primer3Redux::Primer');
-        isa_ok($fp, 'Bio::SeqFeature::Generic');
-        cmp_ok(length($fp->seq->seq), '>', 18);
-        cmp_ok(length($rp->seq->seq), '>', 18);
-
-	my $s  = $result->get_seq;
-        isa_ok($s, 'Bio::Seq');
-	
-        my $ps = $result->get_processed_seq;
-	isa_ok($ps, 'Bio::Seq');
+      #Now check the features we've got:
+      my @features = $ps->get_SeqFeatures;
+      my @primers = grep {blessed $_ && $_->isa("Bio::Tools::Primer3Redux::Primer")} @features;
+      my @pairs = grep {blessed $_ && $_->isa("Bio::Tools::Primer3Redux::PrimerPair")} @features;
+      
+      # but, if we attach the original seq object again then get_processed_seq
+      # breaks because it's looking for cached features which aren't.
+      ok($result->attach_seq($seq));
+      ok($ps = $result->get_processed_seq);
+      
     }
 
 
